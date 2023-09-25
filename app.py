@@ -1,59 +1,65 @@
 import streamlit as st
-import cv2
-import mediapipe as mp
-import numpy as np
 import tempfile
-import os
+import mediapipe as mp
+import cv2
+import numpy as np
 
-def main():
-    st.title("Pose Estimation with OpenCV and MediaPipe")
+# Initialize Streamlit
+st.title("Pose Estimation App")
 
-    uploaded_file = st.file_uploader("Choose a video file", type=["mp4"])
+# Upload a video file
+video_file = st.file_uploader("Upload a video", type=["mp4", "avi"])
 
-    if uploaded_file is not None:
-        # Create a temporary directory to store the uploaded video
-        temp_dir = tempfile.mkdtemp()
-        temp_file_path = os.path.join(temp_dir, "temp_video.mp4")
+if video_file:
+    # Convert the uploaded file to a temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+    temp_file.write(video_file.read())
+    temp_file.close()
+    video_path = temp_file.name
 
-        # Save the uploaded file to the temporary directory
-        with open(temp_file_path, "wb") as temp_file:
-            temp_file.write(uploaded_file.read())
+    # Display uploaded video
+    st.video(video_path)
 
-        # Initialize MediaPipe Pose solution
-        mp_pose = mp.solutions.pose
-        mp_draw = mp.solutions.drawing_utils
-        pose = mp_pose.Pose()
+    # Initialize MediaPipe Pose solution
+    mp_pose_holistic = mp.solutions.holistic
 
-        # Open the video file with OpenCV
-        cap = cv2.VideoCapture(temp_file_path)
+    def process_frame(frame):
+        # Load the Holistic model from MediaPipe
+        with mp_pose_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+            # Convert frame to RGB format (required by MediaPipe)
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-        if not cap.isOpened():
-            st.error("Error: Could not open video file.")
+            # Perform Pose estimation on the frame
+            results = holistic.process(frame)
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+            # Convert frame back to RGB format for Streamlit display
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            # Resize the frame
-            frame = cv2.resize(frame, (600, 400))
+            # Draw landmarks on the frame
+            if results.pose_landmarks:
+                # Create a blank image (black) to draw the landmarks on
+                blank_image = np.zeros_like(frame)
 
-            # Perform pose estimation on the frame
-            results = pose.process(frame)
+                # Draw landmarks on the blank image
+                mp.solutions.drawing_utils.draw_landmarks(blank_image, results.pose_landmarks)
 
-            # Draw the detected pose on the video frame
-            mp_draw.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                                   mp_draw.DrawingSpec((255, 0, 0), 2, 2),
-                                   mp_draw.DrawingSpec((255, 0, 255), 2, 2))
+                # Combine the original frame with the landmark-drawn image
+                frame = cv2.addWeighted(frame, 1, blank_image, 0.5, 0)
 
-            # Display the frame with annotated pose
-            st.image(frame, channels="BGR")
+        return frame  # Return the processed frame
 
-        cap.release()
+    # Process the video and apply pose estimation
+    cap = cv2.VideoCapture(video_path)
 
-        # Remove the temporary directory and file
-        os.remove(temp_file_path)
-        os.rmdir(temp_dir)
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
 
-if __name__ == "__main__":
-    main()
+        # Process the frame
+        processed_frame = process_frame(frame)
+
+        # Display the processed frame
+        st.image(processed_frame, channels="RGB", use_column_width=True)
+
+    cap.release()
