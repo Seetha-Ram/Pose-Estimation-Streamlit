@@ -1,3 +1,6 @@
-pip install opencv-python-headless
+opencv-contrib-python==4.8.0.76
+opencv-python==4.8.0.76
+opencv-python-headless==4.8.0.76
 mediapipe==0.10.3
 numpy==1.25.2
+streamlit==1.27.0
