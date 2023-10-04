@@ -52,15 +52,37 @@ if video_file:
                 left_elbow = landmarks[mp_pose_holistic.PoseLandmark.LEFT_ELBOW]
                 left_wrist = landmarks[mp_pose_holistic.PoseLandmark.LEFT_WRIST]
 
-                # Calculate the angle at the left elbow
-                left_angle = calculate_angle(left_shoulder, left_elbow, left_wrist)
+                right_shoulder = landmarks[mp_pose_holistic.PoseLandmark.RIGHT_SHOULDER]
+                right_elbow = landmarks[mp_pose_holistic.PoseLandmark.RIGHT_ELBOW]
+                right_wrist = landmarks[mp_pose_holistic.PoseLandmark.RIGHT_WRIST]
+
+                neck = landmarks[mp_pose_holistic.PoseLandmark.NOSE]
+
+                left_hip = landmarks[mp_pose_holistic.PoseLandmark.LEFT_HIP]
+                left_knee = landmarks[mp_pose_holistic.PoseLandmark.LEFT_KNEE]
+                left_ankle = landmarks[mp_pose_holistic.PoseLandmark.LEFT_ANKLE]
+
+                right_hip = landmarks[mp_pose_holistic.PoseLandmark.RIGHT_HIP]
+                right_knee = landmarks[mp_pose_holistic.PoseLandmark.RIGHT_KNEE]
+                right_ankle = landmarks[mp_pose_holistic.PoseLandmark.RIGHT_ANKLE]
+
+                # Calculate the angles
+                left_elbow_angle = calculate_angle(left_shoulder, left_elbow, left_wrist)
+                right_elbow_angle = calculate_angle(right_shoulder, right_elbow, right_wrist)
+                neck_angle = calculate_angle(left_shoulder, neck, right_shoulder)
+                left_knee_angle = calculate_angle(left_hip, left_knee, left_ankle)
+                right_knee_angle = calculate_angle(right_hip, right_knee, right_ankle)
 
                 # Draw skeletal lines
                 mp.solutions.drawing_utils.draw_landmarks(frame, results.pose_landmarks)
                 draw_skeletal_lines(frame, results.pose_landmarks)
 
-                # Display the angle on the frame
-                cv2.putText(frame, f"Left Elbow Angle: {left_angle:.2f} degrees", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                # Display the angles on the frame
+                cv2.putText(frame, f"Left Elbow Angle: {left_elbow_angle:.2f} degrees", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                cv2.putText(frame, f"Right Elbow Angle: {right_elbow_angle:.2f} degrees", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                cv2.putText(frame, f"Neck Angle: {neck_angle:.2f} degrees", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                cv2.putText(frame, f"Left Knee Angle: {left_knee_angle:.2f} degrees", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+                cv2.putText(frame, f"Right Knee Angle: {right_knee_angle:.2f} degrees", (10, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
         return frame  # Return the processed frame
 
